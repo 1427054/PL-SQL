@@ -1,0 +1,24 @@
+CREATE OR REPLACE FUNCTION MANAGERS_INS
+(pFull_name     VARCHAR,
+ pFilialID      NUMBER)
+ 
+ 
+ RETURN NUMBER IS
+ vManagerID     NUMBER;
+ vSalaryfrom    NUMBER;
+ 
+
+ 
+ BEGIN
+ 
+    INSERT INTO managers(full_name, 
+                         filialid, 
+                         clients_access
+                         )
+         VALUES (pFull_name,
+                 pFilialID,
+                 1)
+         RETURNING managerid INTO vManagerID;
+   return vManagerID;
+   
+ END;

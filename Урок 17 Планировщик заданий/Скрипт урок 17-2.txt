@@ -1,0 +1,13 @@
+BEGIN
+  DBMS_SCHEDULER.CREATE_JOB(job_name => 'PLANN_CLIENT_STATS_REFRESH',
+                            job_type => 'STORED_PROCEDURE',
+                            job_action => 'CLIENT_STATS_REFRESH',
+                            enabled => true,
+                            start_date => sysdate,
+                            repeat_interval => 'FREQ = DAILY; INTERVAL = 1; BYHOUR = 2; BYMINUTE = 0; BYDAY = MON, TUE, WED, THU, FRI, SAT',
+                            --repeat_interval => 'FREQ = MINUTELY; INTERVAL = 1',
+                            auto_drop => false);
+END;
+
+SELECT *
+  FROM DBA_SCHEDULER_JOBS  -- Эта команда не работает, Оракл пишет: Таблицы или представления не существует, проверял на запуске минутного интервала.

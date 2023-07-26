@@ -1,0 +1,112 @@
+CREATE OR REPLACE FUNCTION CreditInsert
+ (pCreditSum     NUMBER,
+  pCreditmonths  NUMBER,
+  pCreditprc     credits.creditprc%TYPE,
+  pCredittype    VARCHAR,
+  pClientid      NUMBER, 
+  pCurrencyname  VARCHAR, 
+  pName          VARCHAR, 
+  pFam           VARCHAR, 
+  pOtch          VARCHAR, 
+  pBirthdate     DATE, 
+  pGender        NUMBER, 
+  pFilialid      NUMBER, 
+  pManagerid     NUMBER, 
+  pIs_jur        NUMBER, 
+  pInn           VARCHAR, 
+  pKpp           VARCHAR, 
+  pEmail         VARCHAR, 
+  pIs_active     NUMBER
+ )
+
+
+RETURN NUMBER IS
+
+  vAccountid  NUMBER;
+  vClientid   NUMBER;
+  vDog_num    VARCHAR(50);
+  vCreditID   NUMBER;
+  vCalendarid NUMBER;
+  vDate       DATE;
+
+BEGIN
+  
+  vAccountid := client_account_insert(pclientid, 
+                                      pcurrencyname, 
+                                      pname, 
+                                      pfam, 
+                                      potch, 
+                                      pbirthdate, 
+                                      pgender, 
+                                      pfilialid, 
+                                      pmanagerid, 
+                                      pis_jur, 
+                                      pinn, 
+                                      pkpp, 
+                                      pemail, 
+                                      pis_active);
+                                      
+   SELECT a.clientid
+     INTO vClientid
+     FROM accounts a
+    WHERE a.accountid = vAccountid;
+    
+    vDog_num := vAccountid || '/K';
+  
+  INSERT INTO credits(date_start, 
+                      credit_status, 
+                      clientid, 
+                      accountid, 
+                      dog_num, 
+                      dog_date, 
+                      creditsum, 
+                      creditmonths, 
+                      creditprc, 
+                      credittype)
+         VALUES (trunc(SYSDATE),
+                 1,
+                 vClientid,
+                 vAccountid,
+                 vDog_num,
+                 trunc(SYSDATE),
+                 pCreditSum,
+                 pCreditmonths,
+                 pCreditprc,
+                 pCredittype
+                 )
+  RETURNING creditid INTO vCreditid;
+     
+  INSERT INTO creditcalendar(creditid, 
+                             calendarno
+                              )
+          VALUES(vCreditID,
+                 1)
+  
+   RETURNING calendarid INTO vCalendarid;
+   
+   for mm in 1..pCreditmonths
+    loop
+      select add_months(trunc(sysdate), mm)
+        into vDate
+        from dual;
+        
+    vDate := data(vDate);
+    dbms_output.put_line(data(vDate));
+    
+    INSERT INTO creditcalendardays(calendarid, 
+                                 calendardate, 
+                                 calendarsum, 
+                                 issuccess
+                                 )
+          VALUES(vCalendarid,
+                 vDate,
+                 round(pCreditSum *(1 + pCreditprc/100), 2) / pCreditmonths,
+                 0);
+    
+    end loop;
+                 
+  
+                                 
+     
+   RETURN vCreditid;
+END; 

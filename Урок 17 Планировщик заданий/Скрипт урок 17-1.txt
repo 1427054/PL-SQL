@@ -1,0 +1,10 @@
+BEGIN
+  DBMS_SCHEDULER.CREATE_JOB(job_name => 'INKESH',
+                            job_type => 'STORED_PROCEDURE',
+                            job_action => 'KESH',
+                            enabled => true,
+                            start_date => sysdate,
+                            repeat_interval => 'FREQ = DAILY; INTERVAL = 1; BYMONTHDAY = 1; BYHOUR = 18; BYMINUTE = 0',
+                            --repeat_interval => 'FREQ = MINUTELY; INTERVAL = 1',
+                            auto_drop => false);
+END;

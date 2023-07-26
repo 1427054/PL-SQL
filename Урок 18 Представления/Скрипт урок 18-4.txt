@@ -1,0 +1,24 @@
+CREATE MATERIALIZED VIEW MV_YEARS_STATISTICS
+BUILD IMMEDIATE
+REFRESH FAST
+ON DEMAND AS
+
+SELECT EXTRACT(YEAR FROM t2.date_operation) YEAR,
+       COUNT(t2.operation_id) count_operations,
+       SUM(t2.sum_operation) sum_operations
+  FROM pro t2
+ GROUP BY extract(year from t2.date_operation)
+ ORDER BY YEAR DESC
+ 
+ 
+/*CREATE MATERIALIZED VIEW LOG  
+ON PRO WITH SEQUENCE, ROWID
+(operation_id, 
+ date_operation, 
+ accountid_deb, 
+ accountid_cred, 
+ sum_operation, 
+ doc_num, 
+ doc_date, 
+ status_operation, 
+ comment_operation) INCLUDING NEW VALUES;*/

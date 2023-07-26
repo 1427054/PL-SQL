@@ -1,0 +1,13 @@
+CREATE OR REPLACE PROCEDURE save_log(pText VARCHAR) IS
+  PRAGMA AUTONOMOUS_TRANSACTION;
+
+BEGIN
+  INSERT INTO Logs
+    (pc_name, os_user, txt)
+  VALUES
+    (SYS_CONTEXT('USERENV', 'TERMINAL'),
+     SYS_CONTEXT('USERENV', 'OS_USER'),
+     pText);
+     
+  COMMIT;
+END;

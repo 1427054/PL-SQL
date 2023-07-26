@@ -1,0 +1,107 @@
+CREATE OR REPLACE PROCEDURE INS_RERELEASE_CARDS
+(pResult    out VARCHAR,
+ pClientid      NUMBER,
+ pCurrencyname  VARCHAR,
+ pCountCards    NUMBER DEFAULT 1,
+ pCardnomer     VARCHAR) IS
+ 
+  vAccountID    NUMBER;
+  vExpiremonth  VARCHAR(2);
+  vExpireyear   VARCHAR(4);
+  vCardnomer    VARCHAR(16);
+  vCvc          VARCHAR(3);
+ -- vCardid       NUMBER;
+  vCards2       NUMBER;
+  
+BEGIN
+    
+
+  vAccountID := card_account_insert(pclientid, pcurrencyname);
+  
+  SELECT EXTRACT(MONTH FROM ADD_MONTHS(SYSDATE, 36))
+    INTO vExpiremonth
+    FROM DUAL;
+  
+  vExpiremonth := LPAD(vExpiremonth, 2, '0');
+  
+  SELECT EXTRACT(YEAR FROM ADD_MONTHS(SYSDATE, 36))
+    INTO vExpireyear
+    FROM DUAL;
+  
+  IF pCardnomer IS NULL THEN
+    vCardnomer := '044525700'|| LPAD(vAccountID, 7, '0');
+  ELSE vCardnomer := pCardnomer;
+  END IF;
+  
+  SELECT LPAD(SUBSTR(TRUNC(DBMS_RANDOM.value * 1000), 1, 3), 3, '0')
+    INTO vCvc
+    FROM dual;
+    
+  IF pCountCards is null or pCountCards = 1 THEN 
+    INSERT INTO cards (cardnomer, 
+                     expiremonth, 
+                     expireyear, 
+                     cardholdername, 
+                     cvc, 
+                     cardstatus, 
+                     accountid
+                     )
+       VALUES (vCardnomer,
+               vExpiremonth,
+               vExpireyear,
+               'cardholdername',
+               vCvc,
+               1,
+               vAccountID
+               );
+       pResult := 'Одна карта добавлена';
+       /*RETURNING cardid INTO vCardid;
+       RETURN vCardid;*/
+   
+   ELSIF pCountCards = 2 THEN 
+     INSERT INTO cards (cardnomer, 
+                     expiremonth, 
+                     expireyear, 
+                     cardholdername, 
+                     cvc, 
+                     cardstatus, 
+                     accountid
+                     )
+       VALUES (vCardnomer,
+               vExpiremonth,
+               vExpireyear,
+               'cardholdername',
+               vCvc,
+               1,
+               vAccountID
+               );
+       --RETURNING cardid INTO vCardid;
+       vCards2 := vAccountID;
+       vCardnomer := '044525700'|| LPAD(vAccountID, 6, '0') || '1';
+       
+       INSERT INTO cards (cardnomer, 
+                     expiremonth, 
+                     expireyear, 
+                     cardholdername, 
+                     cvc, 
+                     cardstatus, 
+                     accountid
+                     )
+       VALUES (vCardnomer,
+               vExpiremonth,
+               vExpireyear,
+               'cardholdername',
+               vCvc,
+               1,
+               vCards2
+               );
+       /*RETURNING cardid INTO vCardid;
+       RETURN vCardid;*/
+      pResult := 'Две карты добавлены';
+   ELSE
+    
+    pResult := 'Количество карт не должно быть более двух на один счет';
+    --return null;
+  END IF; 
+    
+END;

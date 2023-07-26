@@ -1,0 +1,60 @@
+CREATE OR REPLACE FUNCTION MANAGERPOSITIONS_INS
+(pResult   OUT  VARCHAR,
+ pFull_name     VARCHAR,
+ pFilialID      NUMBER,
+ pPositionName  VARCHAR,
+ pSalary        NUMBER  DEFAULT null 
+)
+
+
+RETURN NUMBER IS
+  vManagerid          NUMBER;
+  vPositionid         NUMBER;
+  vSalaryfrom         NUMBER;
+  vManagerpositionid  NUMBER;
+  vSalaryto           NUMBER;
+  
+BEGIN
+  SELECT salaryto
+           INTO vSalaryto
+           FROM positions
+          WHERE filialid = pFilialID
+            AND positionname = pPositionName;
+            
+  IF vSalaryto < pSalary 
+    THEN pRESULT := 'Проверьте З/П';
+     return null;
+  END IF;
+   
+  
+  vManagerid := managers_ins(pFull_name, pFilialID);
+  
+  SELECT positionid
+    INTO vPositionid
+    FROM positions
+   WHERE positionname = pPositionName
+     AND filialid = pFilialID;
+  
+
+  IF pSalary is null
+     THEN 
+       SELECT salaryfrom
+         INTO vSalaryfrom
+         FROM positions
+        WHERE filialid = pFilialID
+          AND positionname = pPositionName;
+   ELSE vSalaryfrom := pSalary;
+   END IF;
+   
+   INSERT INTO managerpositions(managerid, 
+                                datestart, 
+                                positionid, 
+                                salary
+                                 )
+          VALUES(vManagerid,
+                 trunc(sysdate),
+                 vPositionid,
+                 vSalaryfrom) 
+     RETURNING  managerpositionid INTO vManagerpositionid;
+     return vManagerpositionid;               
+END;

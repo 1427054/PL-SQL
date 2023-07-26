@@ -1,0 +1,55 @@
+/*CREATE TYPE OVERDUE_CREDIT_REC IS OBJECT (
+  clientid        NUMBER,
+  dog_num         VARCHAR(100),
+  calendarid      NUMBER,
+  calendardayid   NUMBER,
+  calendardate    DATE,
+  calendarsum     NUMBER,
+  issuccess       NUMBER
+);*/
+
+--CREATE TYPE OVERDUE_CREDIT_TBL IS TABLE OF OVERDUE_CREDIT_REC;
+
+
+
+CREATE OR REPLACE FUNCTION GET_OVERDUE_CREDIT_TBL(pDate DATE DEFAULT NULL)
+RETURN OVERDUE_CREDIT_TBL PIPELINED IS
+  vOVERDUE OVERDUE_CREDIT_TBL;
+  
+BEGIN
+  vOVERDUE := OVERDUE_CREDIT_TBL();
+  
+  FOR cr IN (SELECT t1.clientid,
+                    t1.dog_num,
+                    t2.calendarid,
+                    t3.calendardayid,
+                    t3.calendardate,
+                    t3.calendarsum,
+                    t3.issuccess
+               FROM CREDITS t1
+               JOIN CREDITCALENDAR t2
+                 ON t1.creditid = t2.creditid
+               JOIN CREDITCALENDARDAYS t3
+                 ON t2.calendarid = t3.calendarid
+              WHERE t3.calendardate < nvl(pDate, trunc(sysdate))
+                AND t3.issuccess = 0)
+    
+                     
+  LOOP
+    vOVERDUE.EXTEND;
+    vOVERDUE(vOVERDUE.Last)                := OVERDUE_CREDIT_REC('', '', '', '', '', '', ''); 
+    vOVERDUE(vOVERDUE.Last).clientid       := cr.clientid;
+    vOVERDUE(vOVERDUE.Last).dog_num        := cr.dog_num;
+    vOVERDUE(vOVERDUE.Last).calendarid     := cr.calendarid;
+    vOVERDUE(vOVERDUE.Last).calendardayid  := cr.calendardayid;
+    vOVERDUE(vOVERDUE.Last).calendardate   := cr.calendardate;
+    vOVERDUE(vOVERDUE.Last).calendarsum    := cr.calendarsum;
+    vOVERDUE(vOVERDUE.Last).issuccess      := cr.issuccess;
+    PIPE ROW (vOVERDUE(vOVERDUE.Last));
+    
+      
+  END LOOP;
+  
+  RETURN;
+  
+END;

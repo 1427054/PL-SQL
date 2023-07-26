@@ -1,0 +1,18 @@
+CREATE OR REPLACE PROCEDURE CLIENTS_TO_FILES IS
+  f UTL_FILE.file_type;
+  
+BEGIN
+  f := UTL_FILE.FOPEN('FILES_DIR', 'CLIENTS_TO_FILES.csv', 'W');
+  
+  FOR cr IN (SELECT * FROM clients c WHERE c.is_jur = 0)
+  LOOP
+    UTL_FILE.put_line(f, cr.clientid  || ', ' ||
+                         cr.name || ' ' || cr.fam || ' ' || cr.otch || ', ' ||
+                         cr.birthdate || ', ' ||
+                         cr.inn       || ', ' ||
+                         cr.email     || ', ' ||
+                         cr.date_create);
+  END LOOP;
+  
+  utl_file.fclose(f);
+END;

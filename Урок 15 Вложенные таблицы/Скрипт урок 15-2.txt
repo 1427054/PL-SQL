@@ -1,0 +1,43 @@
+create or replace type doc_info_rec is object(
+  clientID    number,
+  type_doc    varchar(100),
+  ser_doc     varchar(10),
+  num_doc     varchar(20),
+  date_issue  date,
+  place_issue varchar(500)
+  );
+
+
+
+CREATE OR REPLACE TYPE DOC_INFO_TBL IS TABLE OF DOC_INFO_REC;
+
+
+
+
+CREATE OR REPLACE FUNCTION GET_DOC_TBL(pClientID NUMBER DEFAULT NULL)
+RETURN DOC_INFO_TBL IS
+  vDOC DOC_INFO_TBL;
+  
+BEGIN
+  vDOC := DOC_INFO_TBL();
+  
+  for cr in (SELECT t.clientid,
+                    t1.*
+               FROM clients t, table(t.dop_doc) t1
+              where t.clientid = nvl(pClientID, t.clientid))
+              
+  LOOP
+    vDOC.EXTEND;
+    vDOC(vDOC.Last)             := DOC_INFO_REC(0, '', '', '', '', ''); 
+    vDOC(vDOC.Last).clientID    := cr.clientid;
+    vDOC(vDOC.Last).type_doc    := cr.type_doc;
+    vDOC(vDOC.Last).ser_doc     := cr.ser_doc;
+    vDOC(vDOC.Last).num_doc     := cr.num_doc;
+    vDOC(vDOC.Last).date_issue  := cr.date_issue;
+    vDOC(vDOC.Last).place_issue := cr.place_issue;
+      
+  END LOOP;
+  
+  return (vDOC);
+  
+END;

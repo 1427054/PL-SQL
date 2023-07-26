@@ -1,0 +1,59 @@
+CREATE OR REPLACE TRIGGER TRG_CLIENTS_UD
+BEFORE UPDATE OR DELETE ON CLIENTS
+FOR EACH ROW
+  
+DECLARE
+
+  vEventName clients_hist.event_name%TYPE;
+
+BEGIN
+  
+  IF updating THEN
+    vEventName := 'Редактирование';
+  ELSE
+    vEventName := 'Удаление';
+  END IF;
+  
+  INSERT INTO clients_hist
+    (clientid, 
+     date_event, 
+     name, 
+     fam, 
+     otch, 
+     birthdate, 
+     gender, 
+     filialid, 
+     managerid, 
+     is_jur, 
+     inn, 
+     kpp, 
+     email, 
+     is_active, 
+     event_name, 
+     os_user, 
+     db_user, 
+     terminal, 
+     ip_address)
+  values
+    (:old.clientid, 
+     sysdate, 
+     :old.name, 
+     :old.fam, 
+     :old.otch, 
+     :old.birthdate, 
+     :old.gender, 
+     :old.filialid, 
+     :old.managerid, 
+     :old.is_jur, 
+     :old.inn, 
+     :old.kpp, 
+     :old.email, 
+     :old.is_active, 
+     vEventName, 
+     
+     SYS_CONTEXT('USERENV', 'OS_USER'), 
+     SYS_CONTEXT('USERENV', 'SESSION_USER'), 
+     SYS_CONTEXT('USERENV', 'TERMINAL'),
+     SYS_CONTEXT('USERENV', 'IP_ADDRESS'));
+  
+END;

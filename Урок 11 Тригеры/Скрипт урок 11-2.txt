@@ -1,0 +1,24 @@
+CREATE OR REPLACE TRIGGER TRG_CREDITCALENDARDAYS_UPD_III
+FOR UPDATE ON CREDITS
+COMPOUND TRIGGER
+
+ vCreditID    NUMBER;
+ 
+BEFORE EACH ROW IS
+BEGIN 
+  vCreditID := :old.creditid;
+END BEFORE EACH ROW;
+
+AFTER STATEMENT IS
+  vCalendarID  NUMBER;
+BEGIN
+  SELECT calendarid
+    INTO vCalendarID
+    FROM creditcalendar
+   WHERE creditid = vCreditID;
+     
+  UPDATE creditcalendardays
+     SET issuccess = 1
+   WHERE calendarid = vCalendarID;
+END AFTER STATEMENT;
+END TRG_CREDITCALENDARDAYS_UPD_III;

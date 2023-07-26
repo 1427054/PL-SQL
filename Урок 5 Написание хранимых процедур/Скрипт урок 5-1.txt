@@ -1,0 +1,27 @@
+
+CREATE TABLE client_stats (clientid  NUMBER PRIMARY KEY,
+                           datefirst DATE,
+                           datelast  DATE)
+
+=========================================================
+
+CREATE OR REPLACE PROCEDURE client_stats_refresh IS
+BEGIN
+  MERGE INTO client_stats t
+    USING(SELECT t2.clientid,
+                 min(t1.date_operation) datefirst,
+                 max(t1.date_operation) datelast
+            FROM pro t1
+            JOIN accounts t2
+              on t1.accountid_deb = t2.accountid
+              or t1.accountid_cred = t2.accountid
+        group by t2.clientid) tt
+       ON (t.clientid = tt.clientid)
+     WHEN MATCHED THEN UPDATE
+       SET t.datelast = tt.datelast
+     WHEN NOT MATCHED THEN INSERT
+       (t.clientid, t.datefirst, t.datelast)
+     VALUES
+       (tt.clientid, tt.datefirst, tt.datelast);
+     
+END;

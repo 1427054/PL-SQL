@@ -1,0 +1,196 @@
+CREATE OR REPLACE PACKAGE BODY PKG_SAFE IS
+vNumSafe   NUMBER;
+vManagerID NUMBER;
+vFilialid  NUMBER;
+
+
+
+
+FUNCTION ADD_SAFE(pDate_start DATE DEFAULT SYSDATE)
+RETURN NUMBER IS
+
+/*vNumSafe   NUMBER;
+vManagerID NUMBER;
+vFilialid  NUMBER;*/
+
+BEGIN
+
+  SELECT managerid,
+         filialid
+    INTO vManagerID, vFilialid
+    FROM managers
+   WHERE safe_access = 1
+     and managerid = CURRENT_MANAGER_ID
+     and filialid = CURRENT_FILIAL;
+     
+   insert into safe
+    (date_start,
+     managerid,
+     filialid)
+  values
+    (sysdate,
+     vManagerID,
+     vFilialid)
+  returning numsafe into vNumSafe;
+
+
+return vNumSafe;
+
+  EXCEPTION
+      WHEN NO_DATA_FOUND
+        THEN
+          RAISE_APPLICATION_ERROR(-20001, 'У вас  нет доступа к сейфовым ячейкам, пакет PKG_SAFE.');
+
+ 
+END;
+
+FUNCTION DELETED_FLG_SAFE(pNumSafe NUMBER) RETURN VARCHAR IS
+
+vRes VARCHAR(500);
+
+BEGIN
+  SELECT managerid,
+         filialid
+    INTO vManagerID, vFilialid
+    FROM managers
+   WHERE safe_access = 1
+     and managerid = CURRENT_MANAGER_ID
+     and filialid = CURRENT_FILIAL;
+     
+  UPDATE SAFE t
+     SET t.date_end = SYSDATE,
+         t.status = 0
+   WHERE numsafe = pNumSafe;
+   
+   vRes := 'Ячейка номер ' || pNumSafe || ' удалена';
+   return vRes;
+     
+     
+  EXCEPTION
+      WHEN NO_DATA_FOUND
+        THEN
+          RAISE_APPLICATION_ERROR(-20001, 'У вас  нет доступа к сейфовым ячейкам, пакет PKG_SAFE.');
+END;
+
+FUNCTION ADD_RENT_SAFE(pClientid NUMBER,  pSafein DATE, pSafeout DATE)
+  RETURN NUMBER IS
+  
+vNumsafeAdd  NUMBER;
+EX_IS_FILIAL exception;
+vSafeID      NUMBER;
+  
+BEGIN
+  SELECT managerid,
+         filialid
+    INTO vManagerID, vFilialid
+    FROM managers
+   WHERE safe_access = 1
+     and managerid = CURRENT_MANAGER_ID
+     and filialid = CURRENT_FILIAL; 
+     
+  SELECT min(t1.numsafe)
+    INTO vNumsafeAdd
+    FROM safe t1
+    left join rent_safe t2
+      on t1.numsafe = t2.numsafe
+   where t1.filialid = CURRENT_FILIAL
+     and status != 0
+     and t2.reserve is null 
+      or t2.reserve != 1;
+   
+  IF vNumsafeAdd IS NULL
+    THEN RAISE EX_IS_FILIAL;
+  END IF;
+     
+  INSERT INTO rent_safe
+    (managerid, 
+    clientid, 
+    numsafe, 
+    safein, 
+    safeout, 
+    reserve, 
+    filial_id)
+  VALUES
+    (CURRENT_MANAGER_ID,
+     pClientid,
+     vNumsafeAdd,
+     pSafein,
+     pSafeout,
+     1,
+     CURRENT_FILIAL
+    )
+    RETURNING safeid INTO vSafeId;
+    return vSafeID;
+     
+   
+     
+  EXCEPTION
+    WHEN NO_DATA_FOUND
+      THEN
+        RAISE_APPLICATION_ERROR(-20001, 'У вас  нет доступа к сейфовым ячейкам, пакет PKG_SAFE.');
+    WHEN EX_IS_FILIAL
+      THEN
+        RAISE_APPLICATION_ERROR(-20002, 'В филиале ' || CURRENT_FILIAL 
+                                 || ' нет сейфовых ячеек. Выберете другой филиал.');
+        
+
+END;
+
+FUNCTION CANCELLATION_RESERVATION (pNumsafe NUMBER DEFAULT NULL, pSafeid NUMBER DEFAULT NULL)
+RETURN VARCHAR2 IS
+
+vCancellation VARCHAR2(500);
+
+BEGIN
+  
+  IF pNumsafe IS NULL
+    THEN
+      UPDATE rent_safe
+         SET reserve = 0,
+             datecancellation = sysdate,
+             safein = null,
+             safeout = null
+       WHERE safeid = pSafeid;
+       
+       vCancellation := 'Резерв сейфовой ячейки, номер бронирования: ' || pSafeid || 'отменён';
+  END IF;
+  
+  IF pSafeId IS NULL
+    THEN
+      UPDATE rent_safe
+         SET reserve = 0,
+             datecancellation = sysdate,
+             safein = null,
+             safeout = null
+       WHERE Numsafe = pNumsafe;
+       
+       vCancellation := 'Резерв сейфовой ячейки номер ' || pNumsafe || 'отменён';
+  END IF;
+  
+  return vCancellation;
+  
+END;
+
+FUNCTION HISTORY (pNumsafe NUMBER, pDate1 DATE, pDate2 DATE)
+RETURN NUMBER IS
+
+vClientID NUMBER;
+
+BEGIN
+  SELECT clientid
+    INTO vClientID
+    FROM rent_safe
+   WHERE numsafe = pNumsafe
+     and safein between pDate1 
+                    and pDate2;
+  return vClientID;
+  
+  EXCEPTION
+    WHEN NO_DATA_FOUND
+      THEN
+        RAISE_APPLICATION_ERROR(-20003, 'Введите другие условия поиска.');
+END;  
+           
+
+
+END PKG_SAFE;

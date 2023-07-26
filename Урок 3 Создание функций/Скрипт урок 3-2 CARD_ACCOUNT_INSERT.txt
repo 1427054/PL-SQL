@@ -1,0 +1,37 @@
+CREATE OR REPLACE FUNCTION CARD_ACCOUNT_INSERT
+  (pClientID NUMBER,
+  pCurrencyName VARCHAR) RETURN NUMBER IS
+
+  vAccountNomer  VARCHAR(20);
+  vCountAccounts NUMBER;
+  vAccountID NUMBER;
+  
+BEGIN
+  SELECT COUNT(*)
+    INTO vCountAccounts
+    FROM Accounts
+   WHERE ClientID = pClientID;
+   
+   vCountAccounts := vCountAccounts + 1;
+   
+    
+  vAccountNomer := '40817' || pCurrencyName || LPAD(pClientID, 10, '0')
+                   || LPAD(vCountAccounts, 2, '0');
+                   
+  insert into ACCOUNTS (accountname, 
+                        accountnomer, 
+                        currencyname, 
+                        clientid, 
+                        accountstatus, 
+                        dateopen)
+       values('Счет банковской карты',
+              vAccountNomer,
+              pCurrencyName,
+              pClientID,
+              1,
+              trunc(sysdate))
+      RETURNING accountid into vAccountID;
+  
+  return vAccountID;
+  
+END;

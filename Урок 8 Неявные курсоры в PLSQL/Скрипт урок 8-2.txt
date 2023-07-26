@@ -1,0 +1,45 @@
+CREATE OR REPLACE PROCEDURE KESH IS
+  CURSOR CUR IS
+    select t2.accountid,
+           round(sum(t1.sum_operation) * 0.01, 2),
+           (select to_char(add_months(trunc(sysdate), -1), 'Month') from dual)        
+      from PRO t1
+      join cards t2
+        on t1.accountid_deb = t2.accountid
+       and t2.keshstatus = 1
+       and t1.date_operation between add_months(trunc(sysdate), - 1) and trunc(sysdate) - 1
+      group by t2.accountid
+      having count(t1.operation_id) > 3;
+  
+  vCesh    number;
+  vAccount pro.accountid_cred%TYPE;
+  vMM      varchar(15);
+  
+  
+BEGIN
+  OPEN CUR;
+    LOOP
+      FETCH CUR
+        INTO vAccount, vCesh, vMM;
+    
+    EXIT WHEN CUR%NOTFOUND;
+    
+    INSERT INTO pro(date_operation, 
+                    accountid_cred, 
+                    sum_operation, 
+                    status_operation, 
+                    comment_operation)
+           VALUES(sysdate,
+                  vAccount,
+                  vCesh,
+                  1,
+                  'Кешбек по карте за ' || vMM || 'месяц');
+           
+           DBMS_OUTPUT.PUT_LINE('Клиентам ' || vAccount || ' начислен кэшбэк ' || vCesh
+                                 || ' за ' || vMM || 'месяц');
+    END LOOP;
+    
+    DBMS_OUTPUT.PUT_LINE('Всего ' || CUR%ROWCOUNT || ' строк');
+  
+  CLOSE CUR;
+END;

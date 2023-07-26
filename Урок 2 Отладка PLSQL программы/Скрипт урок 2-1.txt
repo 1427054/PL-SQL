@@ -1,0 +1,40 @@
+DECLARE
+  vClientid        NUMBER;
+  vDog_num         VARCHAR2(10);
+  vDog_date        DATE;
+  vCntDays         NUMBER;
+  vDeposit_status  NUMBER;
+BEGIN
+ 
+  vClientid := 101;
+  
+  SELECT clientid, dog_num, dog_date, FLOOR((dog_date + depositdays) - sysdate)
+    INTO vClientid, vDog_num, vDog_date, vCntDays
+    FROM deposits
+   WHERE clientid = vClientid
+     and deposit_status = 1;
+     
+    Dbms_Output.put_line('Договор депозита номер ' || vDog_num || ' от ' || to_char(vDog_date, 'dd.mm.yyyy'));
+          
+    Dbms_Output.put_line('Количество дней до начисления процентов ' || vCntDays);
+ 
+  BEGIN
+    
+    SELECT clientid, dog_num, dog_date
+        INTO vClientid, vDog_num, vDog_date
+        FROM deposits
+       WHERE clientid = vClientid
+         and deposit_status = 2;
+    Dbms_Output.put_line('Договор депозита номер ' || vDog_num || ' от ' || to_char(vDog_date, 'dd.mm.yyyy')|| ' ЗАКРЫТ');
+    
+    EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+        Dbms_Output.put_line('Закрытых депозитов нет');
+  END;  
+  
+  EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+      Dbms_Output.put_line('Открытых депозитов нет');
+    WHEN TOO_MANY_ROWS THEN
+      Dbms_Output.put_line('Запрос не может быть обработан');
+END;

@@ -1,0 +1,41 @@
+declare 
+  vCnt             NUMBER;
+  vClients_access  NUMBER;
+  vDog_num         VARCHAR2(10);
+  vDog_date        DATE;
+  vDate_close      DATE;
+begin
+  
+  SELECT COUNT(depositid)
+    INTO vCnt
+    FROM deposits
+   WHERE clientid = :idClient
+     and deposit_status = 1;
+  IF vCnt > 1 THEN  :result_text := 'Запрос не может быть обработан';
+  elsif vCnt = 0 THEN  :result_text := 'Вклад не открыт';
+  ELSE
+    BEGIN
+      SELECT clients_access
+        INTO vClients_access
+        FROM managers
+       WHERE managerid = :idmanager;
+          
+      IF vClients_access = 0 THEN :result_text := 'Менеджер не работает';
+      ELSE
+        UPDATE deposits
+           SET deposit_status = 2,
+               date_close = TRUNC(sysdate)
+         WHERE clientid = :idClient
+           AND depositid = (SELECT depositid FROM deposits where deposit_status = 1 and clientid = :idClient);
+        commit;
+        SELECT dog_num, dog_date, date_close
+          INTO vDog_num, vDog_date, vDate_close
+          FROM deposits
+         WHERE clientid = :idClient;
+        :result_text := 'Вклад ' || vDog_num || ' от ' || to_char(vDog_date, 'dd.mm.yyyy') || ' закрыт ' 
+                        || to_char(vDate_close, 'dd.mm.yyyy');  
+      END IF;
+    END;
+  END IF;
+
+END;

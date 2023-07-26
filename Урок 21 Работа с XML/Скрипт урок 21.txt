@@ -1,0 +1,31 @@
+CREATE OR REPLACE PROCEDURE XML_CLIENTS 
+  (pClientID VARCHAR) IS
+  
+  xml_data_clients XMLtype;
+
+BEGIN
+  SELECT XMLAGG(
+              XMLELEMENT(ClientInfo, 
+                         xmlattributes(t.clientid ClientID, 
+                                       t.name || ' ' || t.otch || ' ' || t.fam FIO,
+                                       t.inn INN,
+                                       t.kpp KPP),
+              XMLELEMENT (ClientAccounts, 
+                         xmlattributes(t1.accountname  "Название счета", 
+                                       t1.accountnomer "Номер счета")),
+              XMLELEMENT (ClientCredits, 
+                         xmlattributes(t2.dog_num  "Номер кредитного договора", 
+                                       t2.creditsum "Сумма кредита"))
+              ))XMLRES
+  INTO xml_data_clients            
+  FROM clients t
+  LEFT JOIN accounts t1
+    ON t.clientid = t1.clientid
+  LEFT JOIN credits t2
+    ON t.clientid = t2.clientid
+   AND t2.date_end is null
+ WHERE t.clientid = pClientID;
+ 
+ DBMS_OUTPUT.put_line(xml_data_clients.getStringVal);
+  
+END;

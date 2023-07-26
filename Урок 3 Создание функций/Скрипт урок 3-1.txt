@@ -1,0 +1,59 @@
+CREATE OR REPLACE FUNCTION DEPOSIT_RECOMM
+(pDays          NUMBER,
+ pCurrencyname  VARCHAR,
+ pDepoSum       NUMBER,
+ pClientID      NUMBER)
+ 
+ RETURN NUMBER IS
+ vDepositprc NUMBER;
+ vDepositprcVIP NUMBER;
+ vClientID   NUMBER;
+ 
+ BEGIN
+   BEGIN 
+     SELECT clientid, max(prc)
+       INTO vClientID, vDepositprcVIP
+       FROM (SELECT clientid,
+                   EXTRACT(year from date_open) - EXTRACT(year from sysdate),
+                   max(depositprc) prc
+              FROM deposits
+             WHERE EXTRACT(year from date_open) - EXTRACT(year from sysdate) = 0
+          group by clientid, date_open
+            )
+     WHERE clientid = pClientID
+     GROUP BY clientid;
+         
+    SELECT prc
+      into vDepositprc
+      FROM depositrecommendations
+     WHERE pDepoSum between deposit_sum_start and deposit_sum_end
+       and pDays = days
+       and pCurrencyname = currencyname;
+
+    
+
+              
+     IF vClientID = pClientID and vDepositprcVIP > vDepositprc
+      THEN return vDepositprcVIP;
+     ELSE return vDepositprc;
+     END IF;
+           
+    EXCEPTION
+       WHEN NO_DATA_FOUND  
+         THEN
+         
+           SELECT prc
+             into vDepositprc
+             FROM depositrecommendations
+            WHERE pDepoSum between deposit_sum_start and deposit_sum_end
+              and pDays = days
+              and pCurrencyname = currencyname;
+            return vDepositprc;
+   end;
+    EXCEPTION
+ 
+     WHEN NO_DATA_FOUND THEN DBMS_OUTPUT.put_line('Введите правильные параметры депозита');
+   
+   return null;
+  
+ END;

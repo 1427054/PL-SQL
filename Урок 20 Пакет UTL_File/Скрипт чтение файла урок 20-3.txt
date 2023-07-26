@@ -1,0 +1,19 @@
+DECLARE  
+ f UTL_FILE.file_type;
+ v varchar(32767);
+  
+BEGIN
+  f := UTL_FILE.FOPEN('FILES_DIR', 'CLIENTS_TO_FILES.txt', 'R', 32767);
+  
+  LOOP
+    BEGIN
+      UTL_FILE.get_line(f, v);
+    EXCEPTION
+      when no_data_found then
+        exit;
+    END;
+    dbms_output.put_line(v);
+  END LOOP;
+  
+  utl_file.fclose(f);
+END;

@@ -1,0 +1,62 @@
+CREATE OR REPLACE PROCEDURE BANK_TO_BANK(pVAL_IN_DEST OUT NUMBER, pBicCountry OUT VARCHAR, pNM_COUNTRY IN VARCHAR, pBIC IN VARCHAR, pVAL_IN_RUB IN NUMBER)  IS
+   TYPE BANK_TBL iS TABLE OF ex_banks%RowType;
+   variable1      BANK_TBL;
+   vVAL_IN_DEST   number;
+   vBic           varchar(20);
+  
+   cursor cur1 is
+     select t.*
+       from ex_banks t
+      where upper(t.nm_country) = upper(pNm_country);
+
+     cur1_row  ex_banks%RowType; 
+     cur_ex_bank_info  pls_integer;
+   
+BEGIN
+  variable1 := BANK_TBL();
+  
+  OPEN cur1;
+   
+  LOOP
+        
+    FETCH cur1 INTO cur1_row;
+    EXIT WHEN cur1%NOTFOUND;
+      
+    variable1.EXTEND;
+    variable1(variable1.last) := cur1_row;
+     
+    
+  END LOOP;
+  CLOSE cur1;
+  
+   cur_ex_bank_info := variable1.first;
+   vval_in_dest := 0;  
+    
+ LOOP
+   
+    EXIT WHEN cur_ex_bank_info IS NULL;
+    
+    get_ex_rate(pVAL_IN_DEST, variable1(cur_ex_bank_info).nm_country, variable1(cur_ex_bank_info).bic, pVAL_IN_RUB);
+   
+    pBicCountry := variable1(cur_ex_bank_info).bic;
+ 
+    IF vVAL_IN_DEST < pVAL_IN_DEST
+      
+      THEN
+        
+        vVAL_IN_DEST := pVAL_IN_DEST;
+        vBic := variable1(cur_ex_bank_info).bic;
+               
+    ELSE vVAL_IN_DEST := vVAL_IN_DEST;
+      
+    END IF;
+    dbms_output.put_line(vVAL_IN_DEST ||' -//-//-//- ' || variable1(cur_ex_bank_info).bic || ' Все условия банков этой страны');
+    
+    cur_ex_bank_info := variable1.next(cur_ex_bank_info);
+   
+  
+  END LOOP;
+  dbms_output.put_line(' ');
+  dbms_output.put_line(vVAL_IN_DEST ||' ========== ' || vBic || ' Макс. перевод');
+   
+END;

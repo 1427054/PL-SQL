@@ -1,0 +1,14 @@
+begin
+  DBMS_SCHEDULER.CREATE_JOB(job_name =>        'REFRESH_MV_YEARS_STATISTICS',
+                            start_date =>       to_date('01.01.2022', 'dd.mm.yyyy'),
+                            repeat_interval => 'freq = yearly; interval = 1; BYMONTH = jan; BYMONTHDAY = 1;
+                                                byhour = 2; byminute = 0',
+                            enabled =>          true,
+                            auto_drop =>        false,
+                            job_type =>         'plsql_block',
+                            job_action =>       'BEGIN DBMS_MVIEW.REFRESH(''MV_YEARS_STATISTICS''); end;');
+     
+                     
+ 
+
+end;  

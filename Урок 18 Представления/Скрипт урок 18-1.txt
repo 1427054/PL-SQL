@@ -1,0 +1,26 @@
+CREATE OR REPLACE VIEW V_CLIENTS_SAFE AS
+
+WITH temp AS(
+  SELECT c.clientid,
+         t.safeid,
+         c.name || ' ' || c.otch || ' ' || c.fam ФИО,
+         t.safein "Дата начала брони",
+         t.safeout "Дата конца брони",
+         c.email         
+    FROM rent_safe t
+    JOIN clients c
+      ON t.clientid = c.clientid
+     AND TRUNC(SYSDATE) BETWEEN t.safein AND t.safeout
+     --AND c.is_jur = 0
+   WHERE t.reserve = 1
+)
+SELECT t1.*,
+       t3.*
+  FROM safe t1
+  LEFT JOIN rent_safe t2
+    ON t1.numsafe = t2.numsafe
+  LEFT JOIN temp t3
+    ON t2.clientid = t3.clientid
+   AND t2.safeid = t3.safeid;
+   
+select * from v_clients_safe

@@ -1,0 +1,9 @@
+BEGIN
+  DBMS_SCHEDULER.CREATE_JOB(job_name => 'PLANN_COPY_DEPOSITRECOMMENDATIONS',
+                            job_type => 'STORED_PROCEDURE',
+                            job_action => 'COPY_DEPOSITRECOMMENDATIONS',
+                            enabled => true,
+                            start_date => sysdate,
+                            repeat_interval => 'FREQ=WEEKLY; INTERVAL=1; BYDAY=MON; BYHOUR=05; BYMINUTE=0',
+                            auto_drop => false);
+END;

@@ -1,0 +1,83 @@
+CREATE OR REPLACE FUNCTION CLIENT_ACCOUNT_INSERT
+  (pClientID NUMBER DEFAULT NULL,
+  pCurrencyName VARCHAR,
+  pName       VARCHAR, 
+  pFam        VARCHAR  DEFAULT NULL, 
+  pOtch       VARCHAR  DEFAULT NULL, 
+  pBirthdate  DATE     DEFAULT NULL, 
+  pGender     NUMBER   DEFAULT NULL, 
+  pFilialid   NUMBER, 
+  pManagerid  NUMBER, 
+  pIs_jur     NUMBER, 
+  pInn        VARCHAR, 
+  pKpp        VARCHAR  DEFAULT NULL, 
+  pEmail      VARCHAR, 
+  pIs_active  NUMBER) RETURN NUMBER IS
+
+  vAccountNomer   VARCHAR(20);
+  vAccountID      NUMBER;
+  vClientID       NUMBER;
+  vCountAccounts  NUMBER;
+  
+BEGIN
+  
+  SELECT COUNT(*)
+    INTO vCountAccounts
+    FROM Accounts
+   WHERE ClientID = pClientID;
+   
+   vCountAccounts := vCountAccounts + 1;
+   
+   
+   
+  IF pClientID IS NULL
+    THEN vClientID := clientsinsert(pname, 
+                                    pfam, 
+                                    potch, 
+                                    pbirthdate, 
+                                    pgender, 
+                                    pfilialid, 
+                                    pmanagerid, 
+                                    pis_jur, 
+                                    pinn, 
+                                    pkpp, 
+                                    pemail, 
+                                    pis_active);
+                                    
+         vAccountNomer := '40817' || pCurrencyName || LPAD(vClientID, 10, '0')
+                   || LPAD(vCountAccounts, 2, '0');
+                   
+      INSERT INTO ACCOUNTS (accountname, 
+                        accountnomer, 
+                        currencyname, 
+                        clientid, 
+                        accountstatus, 
+                        dateopen)
+       VALUES('Рассчетный счет для потребительского кредита',
+              vAccountNomer,
+              pCurrencyName,
+              vClientID,
+              1,
+              trunc(SYSDATE))
+      RETURNING accountid INTO vAccountID;
+  
+  ELSE  
+         vAccountNomer := '40817' || pCurrencyName || LPAD(pClientID, 10, '0')
+                   || LPAD(vCountAccounts, 2, '0');          
+    INSERT INTO ACCOUNTS (accountname, 
+                          accountnomer, 
+                          currencyname, 
+                          clientid, 
+                          accountstatus, 
+                          dateopen)
+         VALUES('Рассчетный счет для потребительского кредита',
+                vAccountNomer,
+                pCurrencyName,
+                pClientID,
+                1,
+                trunc(SYSDATE))
+        RETURNING accountid INTO vAccountID;
+  END IF;
+  
+RETURN vAccountID;
+END;

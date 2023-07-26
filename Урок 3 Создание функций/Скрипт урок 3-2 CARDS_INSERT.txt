@@ -1,0 +1,53 @@
+CREATE OR REPLACE FUNCTION CARDS_INSERT
+(pClientid      NUMBER,
+ pCurrencyname  VARCHAR)
+ 
+RETURN NUMBER IS
+  vAccountID    NUMBER;
+  vExpiremonth  VARCHAR(2);
+  vExpireyear   VARCHAR(4);
+  vCardnomer    VARCHAR(16);
+  vCvc          VARCHAR(3);
+  vCardid       NUMBER;
+  
+BEGIN
+  
+  vAccountID := card_account_insert(pClientid, pCurrencyName);
+  
+  SELECT EXTRACT(MONTH FROM ADD_MONTHS(SYSDATE, 36))
+    INTO vExpiremonth
+    FROM DUAL;
+  
+  vExpiremonth := LPAD(vExpiremonth, 2, '0');
+  
+  SELECT EXTRACT(YEAR FROM ADD_MONTHS(SYSDATE, 36))
+    INTO vExpireyear
+    FROM DUAL;
+  
+  vCardnomer := '044525700'|| LPAD(vAccountID, 7, '0');
+  
+  SELECT LPAD(SUBSTR(TRUNC(DBMS_RANDOM.value * 1000), 1, 3), 3, '0')
+    INTO vCvc
+    FROM dual;
+    
+  INSERT INTO cards (cardnomer, 
+                     expiremonth, 
+                     expireyear, 
+                     cardholdername, 
+                     cvc, 
+                     cardstatus, 
+                     accountid
+                     )
+       VALUES (vCardnomer,
+               vExpiremonth,
+               vExpireyear,
+               'cardholdername',
+               vCvc,
+               1,
+               vAccountID
+               )
+       RETURNING cardid INTO vCardid;
+  
+  RETURN vCardid;
+    
+END;

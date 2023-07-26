@@ -1,0 +1,30 @@
+CREATE OR REPLACE PROCEDURE COPY_DEPOSITRECOMMENDATIONS IS
+  vCopy varchar(200);
+
+BEGIN
+  
+  
+  vCopy := 'COPY_DEPOSITRECOMMENDATIONS_TABLE_' || to_char(sysdate, 'ddmmyyyyhh24miss');
+  
+  EXECUTE IMMEDIATE 'CREATE TABLE ' || vCopy ||  ' (days              number, 
+                                                    currencyname      varchar(20), 
+                                                    deposit_sum_start number, 
+                                                    deposit_sum_end   number,
+                                                    prc               number)';
+                                    
+  
+         
+  EXECUTE IMMEDIATE 'INSERT INTO ' || vCopy  || 
+                     '(days, 
+                       currencyname, 
+                       deposit_sum_start, 
+                       deposit_sum_end, 
+                       prc)
+
+                     select days, 
+                             currencyname, 
+                             deposit_sum_start, 
+                             deposit_sum_end, 
+                             prc
+                        from depositrecommendations';
+END;

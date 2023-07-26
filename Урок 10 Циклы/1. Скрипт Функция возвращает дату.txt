@@ -1,0 +1,80 @@
+
+CREATE OR REPLACE FUNCTION DATA
+(pData date) RETURN DATE IS
+
+vData1 DATE;
+vData DATE;
+vMax  DATE;
+vMin  DATE;
+vDayp NUMBER;
+
+BEGIN
+
+  --pData := to_date('07.05.2022', 'dd.mm.yyyy');  
+  BEGIN
+    SELECT daycalend,
+           (SELECT MAX(daycalend) FROM calendar WHERE to_char(daycalend, 'mm') = '01'),
+           (SELECT MIN(daycalend) FROM calendar WHERE to_char(daycalend, 'mm') = '01'),
+           dayp
+      INTO vData, vMax, vMin, vDayp
+      FROM calendar
+     WHERE daycalend = pData;
+     --dbms_output.put_line('-----' || vMin);
+     --dbms_output.put_line('*****' || vMax);
+     --dbms_output.put_line('++++++' || vData);
+     
+     IF vData IS NOT NULL 
+       AND to_date(vData, 'dd.mm.yyyy') BETWEEN to_date(vMin, 'dd.mm.yyyy')
+                                            AND to_date(vMax, 'dd.mm.yyyy')
+         THEN vData := vMax + 1;
+         
+     ELSIF vData IS NOT NULL 
+       AND vDayp = 0
+         THEN vData := pData;
+        
+     ELSIF vData IS NOT NULL 
+       AND to_char(vData, 'D') IN (7, 1)
+          THEN vData := next_day(vData, 'Tuesday');
+         
+     ELSIF vData IS NOT NULL
+       AND to_char(vData, 'D') IN (4, 5)
+         THEN vData := vData + 1;
+         
+     ELSIF vData IS NOT NULL
+       AND to_char(vData, 'D') IN (2, 3)
+        
+         THEN vData := next_day(vData, 'Wednesday');
+        
+     ELSIF vData IS NOT NULL
+       AND to_char(vData, 'D') = 6
+         THEN vData := next_day(vData, 'Monday');
+        
+   
+    END IF;
+    --dbms_output.put_line('++++++' || vData);  
+    
+   
+    
+     --dbms_output.put_line('--//--' || pData);
+     --dbms_output.put_line('/////' || vData);
+     
+    EXCEPTION WHEN NO_DATA_FOUND THEN 
+       IF to_char(pData, 'D') IN (7, 1)
+         AND to_char(pData + 2, 'dd.mm') in ('02.05', '03.05', '09.05', '10.05')
+         THEN vData1 := next_day(pData, 'Wednesday');
+       ELSIF to_char(pData, 'D') IN (7, 1)
+         THEN vData1 := next_day(pData, 'Monday');
+       ELSIF to_char(pData, 'D') NOT IN (7, 1)
+         THEN vData1 := pData;
+          -- dbms_output.put_line('////' || vData1);
+       
+       END IF;
+       
+       return vData1;
+       
+    END;
+     
+   return vData;
+ 
+   --dbms_output.put_line('/////' || vData);
+END;

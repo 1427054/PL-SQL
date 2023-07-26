@@ -1,0 +1,57 @@
+CREATE OR REPLACE FUNCTION ClientsInsert
+ (pName       VARCHAR, 
+  pFam        VARCHAR  DEFAULT NULL, 
+  pOtch       VARCHAR  DEFAULT NULL, 
+  pBirthdate  DATE     DEFAULT NULL, 
+  pGender     NUMBER   DEFAULT NULL, 
+  pFilialid   NUMBER, 
+  pManagerid  NUMBER, 
+  pIs_jur     NUMBER, 
+  pInn        VARCHAR, 
+  pKpp        VARCHAR  DEFAULT NULL, 
+  pEmail      VARCHAR, 
+  pIs_active  NUMBER
+  )
+RETURN NUMBER IS
+
+  vClientId NUMBER;
+  EX_IS_Inn EXCEPTION;
+  
+BEGIN
+  IF pInn IS NULL
+    THEN RAISE EX_IS_Inn; 
+  END IF;
+  
+  INSERT INTO clients(name, 
+                      fam, 
+                      otch, 
+                      birthdate, 
+                      gender, 
+                      filialid, 
+                      managerid, 
+                      is_jur, 
+                      inn, 
+                      kpp, 
+                      email, 
+                      is_active)
+         VALUES(pName,
+                pFam,
+                pOtch,
+                pBirthdate,
+                pGender,
+                pFilialid,
+                pManagerid,
+                pIs_jur,
+                pInn,
+                pKpp,
+                pEmail,
+                pIs_active)
+        RETURNING clientid INTO vClientID;
+        RETURN vClientId;
+        
+  EXCEPTION
+    WHEN EX_IS_Inn THEN
+      RAISE_APPLICATION_ERROR(-20002, 'Заполните обязательные поля');
+    WHEN OTHERS THEN
+      RAISE_APPLICATION_ERROR(-20999, 'что то пошло не так', TRUE);
+END; 

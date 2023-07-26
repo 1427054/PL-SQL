@@ -1,0 +1,17 @@
+CREATE OR REPLACE PROCEDURE SALARY
+(pFilialID NUMBER,
+ pManagers OUT SYS_REFCURSOR) IS
+
+BEGIN
+  OPEN pManagers FOR
+  
+    SELECT t2.filialid,
+           t2.full_name               
+      FROM MANAGERPOSITIONS t1
+      join managers t2
+        on t1.managerid = t2.managerid
+      WHERE t1.datestart BETWEEN t1.datestart AND ADD_MONTHS(TRUNC(t1.datestart), 24)
+        and pFilialID = t2.filialid
+      GROUP BY t1.managerid, t2.full_name, t2.filialid
+      having COUNT(t1.salary) < 2;
+END;

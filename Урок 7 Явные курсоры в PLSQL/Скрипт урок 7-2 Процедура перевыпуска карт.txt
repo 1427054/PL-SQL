@@ -1,0 +1,59 @@
+CREATE OR REPLACE PROCEDURE RERELEASE_CARDS
+(pResult    out VARCHAR) IS
+ 
+  
+  CURSOR CurRerCards is
+    SELECT t3.clientid,
+           t3.name || ' ' || t3.otch FIO,
+           t1.cardnomer,
+           t3.email,
+           count(t1.cardnomer) over (partition by t3.name || ' ' || t3.otch) cnt,
+           (select trunc(sysdate) + 5 from dual) DD
+      FROM CARDS t1
+      JOIN accounts t2
+        ON t1.accountid = t2.accountid
+       AND t1.expiremonth = extract(MONTH FROM SYSDATE) + 1
+       AND t1.expireyear = extract(YEAR FROM SYSDATE)
+      JOIN clients t3
+        ON t2.clientid = t3.clientid
+       AND t3.email IS NOT NULL;
+       
+  vText       varchar(1000);
+  vFIO        varchar(150);
+  vEmail      varchar(100);
+  vClientID   number;
+  vCardnomer  varchar(30);
+  vCnt        number;
+  vDate       DATE;
+  
+  
+BEGIN
+  OPEN CurRerCards;
+    LOOP
+      FETCH CurRerCards
+        INTO vClientID, vFIO, vCardnomer, vEmail, vCnt, vDate;
+       
+      EXIT WHEN CurRerCards%NOTFOUND;
+        
+         
+       IF vCnt = 2 THEN
+         vText := 'Здравствуйте, ' || vFIO || '. Новые карты готовы, для получения,
+                   обратитесь в отделения банка, где получали первую карту.
+                   Карту можно забрать после ' || vDate || '. Срок Хранения один месяц.';
+         
+       
+       ELSE 
+         vText := 'Здравствуйте, ' || vFIO || '. Новая карта готова, для получения,
+                   обратитесь в отделения банка, где получали первую карту.
+                   Карту можно забрать после ' || vDate || '. Срок Хранения один месяц.';
+         
+       END IF;
+       
+      INS_RERELEASE_CARDS(pResult, vClientID, '810', vCnt, vCardnomer);
+       
+       EMAIL_SEND(vEmail, 'Выпуск новой карты!!!', vText);
+        
+    END LOOP;
+  CLOSE CurRerCards;
+
+END;

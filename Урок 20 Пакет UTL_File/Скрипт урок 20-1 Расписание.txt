@@ -1,0 +1,9 @@
+BEGIN
+  DBMS_SCHEDULER.CREATE_JOB(job_name => 'PLANN_CLIENTS_TO_FILES',
+                            job_type => 'STORED_PROCEDURE',
+                            job_action => 'CLIENTS_TO_FILES',
+                            enabled => true,
+                            start_date => sysdate,
+                            repeat_interval => 'FREQ=DAILY; INTERVAL=1; BYHOUR=23; BYMINUTE=59; BYSECOND=59',
+                            auto_drop => false);
+END;
